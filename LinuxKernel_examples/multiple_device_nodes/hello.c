@@ -5,31 +5,27 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
-#include <linux/spinlock.h>
 
+
+#define MAX_DEVICES     5
 
 int base_minor = 0;
 char *device_name = "msg";
-int count = 1;
+int count = MAX_DEVICES;
 dev_t devicenumber;
 
 static struct class *class = NULL;
 static struct device *device = NULL;
-static struct cdev mycdev;
+static struct cdev mycdev[MAX_DEVICES];
 
 #define MAX_SIZE        1024
 char kernel_buffer[MAX_SIZE];
 int buffer_index;
 MODULE_LICENSE("GPL");
 
-DEFINE_SPINLOCK(my_lock);
-
 static int device_open(struct inode *inode, struct file *file)
 {
-	pr_info("%s Trying to acquire spinlock on processor:%d\n", __func__, smp_processor_id());
-	if (!spin_trylock(&my_lock))
-		return -EBUSY;
-	pr_info("%s: Spinlock Acquired on processor:%d\n", __func__, smp_processor_id());
+	pr_info("%s\n", __func__);
 	file->f_pos = 0;
 	buffer_index = 0;
 	return 0;
@@ -38,8 +34,6 @@ static int device_open(struct inode *inode, struct file *file)
 static int device_release(struct inode *inode, struct file *file)
 {
 	pr_info("%s\n", __func__);
-	pr_info("%s: Spinlock Released on processor:%d\n", __func__, smp_processor_id());
-	spin_unlock(&my_lock);
         return 0;
 }
 
@@ -110,28 +104,56 @@ static ssize_t device_write(struct file *file, const char __user *user_buffer,
         return bytes_written;
 }
 
+static loff_t device_lseek(struct file *file, loff_t offset, int orig)
+{
+        loff_t new_pos = 0;
+
+        switch(orig) {
+                case 0 : /*seek set*/
+                        new_pos = offset;
+                        break;
+                case 1 : /*seek cur*/
+                        new_pos = file->f_pos + offset;
+                        break;
+                case 2 : /*seek end*/
+                        new_pos = MAX_SIZE - offset;
+                        break;
+        }
+        if(new_pos > MAX_SIZE)
+                new_pos = MAX_SIZE;
+        if(new_pos < 0)
+                new_pos = 0;
+        file->f_pos = new_pos;
+        return new_pos;
+}
+
 
 
 struct file_operations device_fops = {
 	.read = device_read,
 	.write = device_write,
 	.open = device_open,
-	.release = device_release
+	.release = device_release,
+	.llseek = device_lseek
 };
 
 
 static int test_hello_init(void)
 {
+	int i = 0;
 	class = class_create(THIS_MODULE, "myclass");
 
 	if (!alloc_chrdev_region(&devicenumber, base_minor, count, device_name)) {
+		int major = MAJOR(devicenumber);
 		printk("Device number registered\n");
-		printk("Major number received:%d\n", MAJOR(devicenumber));
-
-		device = device_create(class, NULL, devicenumber, NULL, device_name);
-		cdev_init(&mycdev, &device_fops);
-		mycdev.owner = THIS_MODULE;
-		cdev_add(&mycdev, devicenumber, count);
+		printk("Major number received:%d\n", major);
+		for (i = 0; i < MAX_DEVICES; i++) {
+			dev_t tmp_device = MKDEV(major, i);
+			device = device_create(class, NULL, tmp_device, NULL, "%s%d", device_name, i);
+			cdev_init(&mycdev[i], &device_fops);
+			mycdev[i].owner = THIS_MODULE;
+			cdev_add(&mycdev[i], tmp_device, 1);
+		}
 
 	}
 	else
@@ -142,9 +164,16 @@ static int test_hello_init(void)
 
 static void test_hello_exit(void)
 {
-	device_destroy(class, devicenumber);
-        class_destroy(class);
-	cdev_del(&mycdev);
+	int major = MAJOR(devicenumber);
+	int i = 0;
+	dev_t tmp_device;
+	for (i = 0; i < MAX_DEVICES; i++) {
+		tmp_device = MKDEV(major, i);
+		device_destroy(class, tmp_device);
+		cdev_del(&mycdev[i]);
+	}
+	
+	class_destroy(class);
 	unregister_chrdev_region(devicenumber, count);
 }
 
