@@ -1,0 +1,63 @@
+S.No,Set No,Set,Name,Country,Playing Role,IPL Matches,Capped / Uncapped /Associate,Reserve Price(in RS Lacs),IPL 2020 Team,Auctioned Price(in RS Lacs),IPL 2019 Team,IPL Team(s)
+1,1,BA1,Chris Lynn,,Batsman,41,Capped,200,Mumbai Indians,200,KKR,"Deccan Chargers,SRH,KKR"
+2,1,BA1,Eoin Morgan,,Batsman,52,Capped,200,Kolkata Knight Riders,525,,"RCB, KKR, SRH, KXIP"
+3,1,BA1,Robin Uthappa,,Batsman,177,Capped,150,Rajasthan Royals,300,KKR,"MI, RCB, PWI, KKR"
+4,1,BA1,Jason Roy,,Batsman,8,Capped,150,Delhi Capitals,150,,"GL,DD"
+5,1,BA1,Aaron Finch,,Batsman,75,Capped,100,Royal Challengers Bangalore,440,,"RR, DD, PWI, SRH, MI, GL, KXIP"
+6,2,AL1,Glenn Maxwell,,All Rounder,69,Capped,200,Kings XI Punjab,1075,,"MI,KXIP,DD"
+7,2,AL1,Chris Woakes,,All Rounder,18,Capped,150,Delhi Capitals,150,,"KKR,RCB"
+8,2,AL1,Pat Cummins,,All Rounder,16,Capped,200,Kolkata Knight Riders,1550,,"MI,KKR,DD"
+9,2,AL1,Sam Curran,,All Rounder,16,Capped,100,Chennai Super Kings,550,KXIP,KXIP
+10,2,AL1,Chris Morris,,All Rounder,61,Capped,150,Royal Challengers Bangalore,1000,DC,"CSK,RR,DC"
+11,3,WK1,Alex Carey,,Wicket Keeper,,Capped,50,Delhi Capitals,240,,
+12,4,FA1,Jaydev Unadkat,,Fast Bowler,73,Capped,100,Rajasthan Royals,300,RR,"KKR, RCB, DD,RPS,RR"
+13,4,FA1,Nathan Coulter-Nile,,All Rounder,26,Capped,100,Mumbai Indians,800,RCB,"MI, DD, KKR, RCB"
+14,4,FA1,Sheldon Cottrell,,Fast Bowler,,Capped,50,Kings XI Punjab,850,,
+15,5,SP1,Piyush Chawla,,Spinner,157,Capped,100,Chennai Super Kings,675,KKR,"KXIP,KKR"
+16,6,UBA1,Rahul Tripathi,,Batsman,34,Uncapped,20,Kolkata Knight Riders,60,RR,"RPS,RR"
+17,6,UBA1,Virat Singh,,Batsman,,Uncapped,20,Sunrisers Hyderabad,190,,
+18,5,UBA1,Priyam Garg,,Batsman,,Uncapped,20,Sunrisers Hyderabad,190,,
+19,7,UAL1,Deepak Hooda,,All Rounder,61,Uncapped,40,Kings XI Punjab,50,SRH,"RR,SRH"
+20,7,UAL1,Varun Chakravarthy,,All Rounder,1,Uncapped,30,Kolkata Knight Riders,400,KXIP,KXIP
+21,7,UAL1,Yashasvi Jaiswal,,All Rounder,,Uncapped,20,Rajasthan Royals,240,,
+22,8,UWK1,Anuj Rawat,,Wicket Keeper,,Uncapped,20,Rajasthan Royals,80,,
+23,8,UFA1,Akash Singh,,Fast Bowler,,Uncapped,20,Rajasthan Royals,20,,
+24,9,UFA1,Kartik Tyagi,,Fast Bowler,,Uncapped,20,Rajasthan Royals,130,,
+25,9,UFA1,Ishan Porel,,Fast Bowler,,Uncapped,20,Kings XI Punjab,20,,
+26,10,USP1,M Siddharth,,Spinner,,Uncapped,20,Kolkata Knight Riders,20,,
+27,10,USP1,Ravi Bishnoi,,Spinner,,Uncapped,20,Kings XI Punjab,200,,
+28,11,BA2,Shimron Hetmyer,,Batsman,5,Capped,50,Delhi Capitals,775,RCB,RCB
+29,11,BA2,David Miller,,Batsman,79,Capped,75,Rajasthan Royals,75,KXIP,KXIP
+30,11,BA2,Saurabh Tiwary,,Batsman,81,Capped,50,Mumbai Indians,50,,"RCB,DD,RPS,MI"
+31,12,AL2,Mitchell Marsh,,All Rounder,20,Capped,200,Sunrisers Hyderabad,200,,"DCH,PWI,RPS"
+32,12,AL2,James Neesham,,All Rounder,4,Capped,50,Kings XI Punjab,50,,DD
+33,13,FA2,Josh Hazlewood,,Fast Bowler,0,Capped,200,Chennai Super Kings,200,,MI
+34,15,UAL2,Bavanaka Sandeep,,All Rounder,,Uncapped,20,Sunrisers Hyderabad,20,,
+35,15,UAL2,Chris Green,,All Rounder,,Uncapped,20,Kolkata Knight Riders,20,,
+36,16,UWK2,Josh Philippe,,Wicket Keeper,0,Uncapped,20,Royal Challengers Bangalore,20,,
+37,17,UFA2,Mohsin Khan,,Fast Bowler,0,Uncapped,20,Mumbai Indians,20,,MI
+38,19,BA3,Tom Banton,,Batsman,,Uncapped,100,Kolkata Knight Riders,100,,
+39,20,AL3,Fabian Allen,,All Rounder,,Capped,50,Sunrisers Hyderabad,50,,
+40,20,AL3,Chris Jordan,,All Rounder,11,Capped,75,Kings XI Punjab,300,,"RCB, SRH"
+41,22,FA3,Kane Richardson,,Fast Bowler,14,Capped,150,Royal Challengers Bangalore,400,,"PWI, RR, RCB"
+42,22,FA3,Oshane Thomas,,Fast Bowler,4,Capped,50,Rajasthan Royals,50,RR,RR
+43,28,USP3,Pravin Tambe,,Spinner,33,Capped,20,Kolkata Knight Riders,20,,"RR,GL,SRH"
+44,33,UAL4,Tajinder Singh Dhillon,,All Rounder,0,Uncapped,20,Kings XI Punjab,20,,MI
+45,33,UAL4,Abdul Samad,,All Rounder,,Uncapped,20,Sunrisers Hyderabad,20,,
+46,42,UAL6,Aniruddha Joshi,,All Rounder,0,Uncapped,20,Rajasthan Royals,20,,RCB
+47,43,AL7,Digvijay Deshmukh,,All Rounder,,Uncapped,20,Mumbai Indians,20,,
+48,43,AL7,Prince Balwant Rai,,All Rounder,,Uncapped,20,Mumbai Indians,20,,
+49,[ADD],[ADD],Sanjay Yadav,,All Rounder,0,Uncapped,20,Sunrisers Hyderabad,20,,KKR
+50,[REC],[REC],Mohit Sharma,,Bowler,85,Capped,50,Delhi Capitals,50,,
+51,[REC],[REC],Pavan Deshpande,,All Rounder,0,Uncapped,20,Royal Challengers Bangalore,20,,
+52,[REC],[REC],Prab Simran Singh,,Wicket Keeper,1,Uncapped,20,Kings XI Punjab,55,KXIP,KXIP
+53,[REC],[REC],Tushar Deshpande,,Bowler,,Uncapped,20,Delhi Capitals,20,,
+54,[REC],[REC],R Sai Kishore,,Bowler,,Uncapped,20,Chennai Super Kings,20,,
+55,[REC],[REC],Marcus Stoinis,,All Rounder,29,Capped,100,Delhi Capitals,480,RCB,"RCB,KXIP"
+56,[REC],[REC],Dale Steyn,,Bowler,92,Capped,200,Royal Challengers Bangalore,200,RCB,"RCB,Deccan Chargers, GL,SRH"
+57,[REC],[REC],Andrew Tye,,Bowler,,Capped,100,Rajasthan Royals,100,,"CSK,GL,KXIP"
+58,[REC],[REC],Lalit Yadav,,All Rounder,,Uncapped,20,Delhi Capitals,20,,
+59,[REC],[REC],Shahbaz Ahmed,,Wicket Keeper,,Uncapped,20,Royal Challengers Bangalore,20,,
+60,[REC],[REC],Nikhil Naik,,Wicket Keeper,3,Uncapped,20,Kolkata Knight Riders,20,KKR,"KKR,KXIP"
+61,[REC],[REC],Tom Curran,,All Rounder,5,Capped,100,Rajasthan Royals,100,,KKR
+62,[REC],[REC],Isuru Udana,,All Rounder,,Capped,50,Royal Challengers Bangalore,50,,
