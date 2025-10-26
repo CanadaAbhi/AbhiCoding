@@ -1,0 +1,9 @@
+{
+  "name": "cpp-compiler",
+  "private": true,
+  "scripts": {
+    "build": "g++ -std=c++17 -Wall -Wextra -O2 src/*.cpp -o compiler",
+    "compile": "npm run build && ./compiler",
+    "clean": "rm -f compiler *.o"
+  }
+}
