@@ -1,0 +1,5 @@
+all: irq_defer_app
+irq_defer_app: irq_defer_app.c
+	gcc -O2 -Wall -o $@ $<
+clean:
+	rm -f irq_defer_app

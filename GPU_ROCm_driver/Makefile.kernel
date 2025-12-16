@@ -1,0 +1,32 @@
+# Makefile for ROCm GPU Kernel Driver
+
+obj-m += rocm_gpu_driver.o
+
+KDIR := /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
+
+all:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+clean:
+	$(MAKE) -C $(KDIR) M=$(PWD) clean
+
+install:
+	sudo insmod rocm_gpu_driver.ko
+
+uninstall:
+	sudo rmmod rocm_gpu_driver
+
+reload: uninstall install
+
+check:
+	dmesg | tail -20
+
+device:
+	ls -l /dev/rocm_gpu0
+
+info:
+	@echo "Kernel module info:"
+	modinfo rocm_gpu_driver.ko
+
+.PHONY: all clean install uninstall reload check device info

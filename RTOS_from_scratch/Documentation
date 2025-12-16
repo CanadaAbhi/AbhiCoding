@@ -1,0 +1,452 @@
+# Minimal RTOS - Technical Documentation
+
+## Overview
+
+A lightweight, preemptive Real-Time Operating System (RTOS) with advanced features:
+- **512 Priority Levels** (0 = highest, 511 = lowest)
+- **Preemptive Priority-Based Scheduling** with O(1) task selection
+- **Priority Inheritance** for mutexes (prevents priority inversion)
+- **Comprehensive Synchronization**: Semaphores, Mutexes, Message Queues
+- **Software Timers** with periodic and one-shot modes
+- **Interrupt Management** with 512 priority levels
+- **Minimal Footprint** - Designed for embedded systems
+
+## Architecture
+
+### Core Components
+
+#### 1. Task Management
+```
+- Task Control Block (TCB) contains:
+  - Stack pointer and stack array
+  - Priority (0-511)
+  - State (Ready, Running, Blocked, Suspended, Deleted)
+  - Delay counter
+  - Wait object pointer
+  - Next task pointer (for linked lists)
+```
+
+#### 2. Scheduler
+```
+- Algorithm: Preemptive Priority-Based
+- Complexity: O(1) task selection using bitmap
+- 512 ready lists (one per priority)
+- 64-bit bitmap array for fast highest priority lookup
+- Context switches on:
+  - Task blocks/delays
+  - Higher priority task becomes ready
+  - Task yields CPU
+  - System tick
+```
+
+#### 3. Synchronization Mechanisms
+
+**Semaphores**
+- Counting semaphores
+- Task waiting lists (priority-ordered)
+- Timeout support
+
+**Mutexes**
+- Binary locks with ownership
+- Recursive locking support
+- Priority inheritance protocol
+- Prevents priority inversion
+
+**Message Queues**
+- Fixed-size circular buffers
+- Pointer-based messages
+- Blocking send/receive with timeout
+
+#### 4. Timers
+- Software timers driven by system tick
+- One-shot and periodic modes
+- Callback-based execution
+- Minimal overhead
+
+#### 5. Interrupt Management
+- 512 interrupt priority levels
+- Nested interrupt support
+- Critical section protection
+
+## API Reference
+
+### Task Management
+
+#### rtos_task_create()
+```c
+task_tcb_t* rtos_task_create(
+    void (*task_func)(void *),  // Task function
+    const char *name,            // Task name
+    uint16_t priority,           // Priority (0-511)
+    void *arg                    // Task argument
+);
+```
+Creates a new task and adds it to the ready list.
+
+**Example:**
+```c
+void my_task(void *arg) {
+    while(1) {
+        // Task code
+        rtos_task_delay(100);
+    }
+}
+
+task_tcb_t *task = rtos_task_create(my_task, "MyTask", 10, NULL);
+```
+
+#### rtos_task_delay()
+```c
+void rtos_task_delay(uint32_t ticks);
+```
+Delays current task for specified ticks. Task enters BLOCKED state.
+
+#### rtos_task_yield()
+```c
+void rtos_task_yield(void);
+```
+Voluntarily gives up CPU to next ready task of equal or higher priority.
+
+### Semaphores
+
+#### rtos_semaphore_create()
+```c
+semaphore_t* rtos_semaphore_create(int32_t initial_count);
+```
+
+#### rtos_semaphore_wait()
+```c
+rtos_status_t rtos_semaphore_wait(
+    semaphore_t *sem,
+    uint32_t timeout_ticks  // 0=no wait, UINT32_MAX=forever
+);
+```
+
+#### rtos_semaphore_signal()
+```c
+rtos_status_t rtos_semaphore_signal(semaphore_t *sem);
+```
+
+**Example - Producer/Consumer:**
+```c
+semaphore_t *data_sem = rtos_semaphore_create(0);
+
+// Producer
+void producer(void *arg) {
+    while(1) {
+        // Produce data
+        rtos_semaphore_signal(data_sem);
+    }
+}
+
+// Consumer
+void consumer(void *arg) {
+    while(1) {
+        rtos_semaphore_wait(data_sem, UINT32_MAX);
+        // Consume data
+    }
+}
+```
+
+### Mutexes
+
+#### rtos_mutex_create()
+```c
+mutex_t* rtos_mutex_create(void);
+```
+
+#### rtos_mutex_lock()
+```c
+rtos_status_t rtos_mutex_lock(
+    mutex_t *mutex,
+    uint32_t timeout_ticks
+);
+```
+Locks mutex with priority inheritance. If lower-priority task holds mutex,
+its priority is temporarily boosted to prevent priority inversion.
+
+#### rtos_mutex_unlock()
+```c
+rtos_status_t rtos_mutex_unlock(mutex_t *mutex);
+```
+
+**Example - Shared Resource:**
+```c
+mutex_t *uart_mutex = rtos_mutex_create();
+
+void task1(void *arg) {
+    rtos_mutex_lock(uart_mutex, UINT32_MAX);
+    // Use UART
+    rtos_mutex_unlock(uart_mutex);
+}
+```
+
+### Message Queues
+
+#### rtos_queue_create()
+```c
+message_queue_t* rtos_queue_create(uint32_t size);
+```
+
+#### rtos_queue_send()
+```c
+rtos_status_t rtos_queue_send(
+    message_queue_t *queue,
+    void *message,
+    uint32_t timeout_ticks
+);
+```
+
+#### rtos_queue_receive()
+```c
+rtos_status_t rtos_queue_receive(
+    message_queue_t *queue,
+    void **message,
+    uint32_t timeout_ticks
+);
+```
+
+**Example:**
+```c
+message_queue_t *queue = rtos_queue_create(10);
+
+// Sender
+int *data = malloc(sizeof(int));
+*data = 42;
+rtos_queue_send(queue, data, UINT32_MAX);
+
+// Receiver
+void *msg;
+rtos_queue_receive(queue, &msg, UINT32_MAX);
+int value = *(int*)msg;
+free(msg);
+```
+
+### Timers
+
+#### rtos_timer_create()
+```c
+timer_t* rtos_timer_create(
+    uint32_t period_ms,          // Timer period
+    timer_callback_t callback,   // Callback function
+    void *arg,                   // Callback argument
+    bool periodic                // true=periodic, false=one-shot
+);
+```
+
+**Example:**
+```c
+void timer_callback(void *arg) {
+    printf("Timer fired!\n");
+}
+
+timer_t *timer = rtos_timer_create(1000, timer_callback, NULL, true);
+rtos_timer_start(timer);
+```
+
+### Interrupts
+
+#### rtos_interrupt_register()
+```c
+rtos_status_t rtos_interrupt_register(
+    uint16_t irq_num,      // Interrupt number (0-511)
+    void (*handler)(void), // Handler function
+    uint16_t priority      // Interrupt priority
+);
+```
+
+#### Critical Sections
+```c
+rtos_critical_enter();  // Disable interrupts
+// Critical code
+rtos_critical_exit();   // Enable interrupts
+```
+
+## Priority Inheritance Protocol
+
+The RTOS implements priority inheritance to prevent priority inversion:
+
+1. **Normal Operation**: Task acquires mutex at its normal priority
+2. **Contention**: When higher-priority task blocks on mutex
+3. **Inheritance**: Mutex owner's priority is boosted to waiter's priority
+4. **Release**: Priority restored to original when mutex is released
+
+**Example Scenario:**
+```
+Task A (priority 10) holds mutex
+Task B (priority 200) running normally
+Task C (priority 5) tries to acquire mutex
+
+Result: Task A's priority → 5 (inherited from C)
+Task A can now preempt Task B and release mutex quickly
+```
+
+## Memory Footprint
+
+Approximate memory usage:
+
+```
+Component               Size
+---------------------------------
+Task Pool (32 tasks)    ~130 KB
+Semaphore Pool          ~512 bytes
+Mutex Pool              ~512 bytes
+Queue Pool              ~256 bytes + queue buffers
+Timer Pool              ~512 bytes
+Interrupt Table         ~12 KB
+Priority Bitmap         64 bytes
+---------------------------------
+Total Base:             ~144 KB
+```
+
+## Performance Characteristics
+
+- **Task Switch**: O(1) - constant time
+- **Priority Lookup**: O(1) - bitmap scan
+- **Semaphore Signal**: O(n) where n = waiting tasks
+- **Mutex Lock**: O(1) with priority inheritance
+- **Queue Operations**: O(1)
+
+## Configuration
+
+Edit `rtos.h` to adjust:
+```c
+#define RTOS_MAX_TASKS          32    // Maximum tasks
+#define RTOS_MAX_PRIORITIES     512   // Priority levels
+#define RTOS_STACK_SIZE         1024  // Per-task stack
+#define RTOS_TICK_RATE_HZ       1000  // Tick frequency
+```
+
+## Building and Running
+
+### Build
+```bash
+make
+```
+
+### Run Example
+```bash
+make run
+```
+
+### Clean
+```bash
+make clean
+```
+
+## Porting Guide
+
+To port to a specific microcontroller:
+
+1. **Context Switching**
+   - Implement `context_switch()` with CPU register save/restore
+   - Use appropriate assembly for your architecture
+
+2. **Critical Sections**
+   - Replace `rtos_critical_enter/exit()` with actual interrupt disable/enable
+
+3. **Timer Interrupt**
+   - Configure hardware timer to call `rtos_tick_handler()` at RTOS_TICK_RATE_HZ
+
+4. **Startup**
+   - Call `rtos_init()` before creating tasks
+   - Call `rtos_start()` to begin scheduling
+   - Enable interrupts
+
+**Example for ARM Cortex-M:**
+```c
+void PendSV_Handler(void) {
+    // Context switch code
+    // Save current task context
+    // Load next task context
+}
+
+void SysTick_Handler(void) {
+    rtos_tick_handler();
+}
+```
+
+## Best Practices
+
+1. **Priority Assignment**
+   - Reserve 0-99 for critical real-time tasks
+   - Use 100-299 for normal tasks
+   - Use 300-510 for background tasks
+   - Priority 511 is reserved for idle task
+
+2. **Stack Sizing**
+   - Monitor stack usage during development
+   - Add margin for interrupt stack usage
+   - Use static analysis tools
+
+3. **Mutex vs Semaphore**
+   - Use mutex for resource protection (has ownership)
+   - Use semaphore for signaling between tasks
+
+4. **Deadlock Prevention**
+   - Always acquire mutexes in same order
+   - Use timeouts to detect deadlocks
+   - Keep critical sections short
+
+5. **Interrupt Handlers**
+   - Keep ISRs short and fast
+   - Use semaphores to wake tasks from ISRs
+   - Don't call blocking functions in ISRs
+
+## Example Use Cases
+
+### 1. Real-Time Data Acquisition
+```c
+void adc_task(void *arg) {
+    while(1) {
+        rtos_semaphore_wait(adc_ready_sem, UINT32_MAX);
+        uint16_t data = read_adc();
+        process_data(data);
+    }
+}
+
+void ADC_IRQHandler(void) {
+    rtos_semaphore_signal(adc_ready_sem);
+}
+```
+
+### 2. Multi-Sensor System
+```c
+void sensor1_task(void *arg) { /* Priority 10 */ }
+void sensor2_task(void *arg) { /* Priority 20 */ }
+void display_task(void *arg)  { /* Priority 50 */ }
+void logging_task(void *arg)  { /* Priority 400 */ }
+```
+
+### 3. Motor Control
+```c
+void control_loop(void *arg) {
+    timer_t *timer = rtos_timer_create(10, control_callback, NULL, true);
+    rtos_timer_start(timer);
+    
+    while(1) {
+        rtos_semaphore_wait(control_sem, UINT32_MAX);
+        update_motor_position();
+    }
+}
+```
+
+## Troubleshooting
+
+**Task not running?**
+- Check priority - lower number = higher priority
+- Ensure task is not blocked on synchronization object
+- Verify task was created successfully
+
+**Priority inversion?**
+- Use mutexes instead of semaphores for resource protection
+- Check mutex is being released properly
+
+**Stack overflow?**
+- Increase RTOS_STACK_SIZE
+- Reduce local variable usage
+- Check for infinite recursion
+
+## License
+
+This is an educational RTOS implementation. Free to use and modify.

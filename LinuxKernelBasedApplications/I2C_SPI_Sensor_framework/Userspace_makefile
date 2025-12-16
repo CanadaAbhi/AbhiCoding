@@ -1,0 +1,15 @@
+CC = gcc
+CFLAGS = -O2 -Wall -pthread
+LIBS = -lmosquitto -lpthread
+
+all: sensor_daemon monitoring_ui cloud_subscriber
+
+sensor_daemon: sensor_daemon.c
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+monitoring_ui: monitoring_ui.c
+	$(CC) $(CFLAGS) -o $@ $<
+cloud_subscriber: cloud_subscriber.c
+	$(CC) $(CFLAGS) -o $@ $< -lmosquitto
+
+clean:
+	rm -f sensor_daemon monitoring_ui cloud_subscriber

@@ -1,0 +1,73 @@
+makefile
+
+
+# Makefile — AES-256 ARM Embedded
+# Targets: aarch64-linux | armv7-m bare-metal | native (test)
+
+CC_NATIVE  := gcc
+CC_A64     := aarch64-linux-gnu-gcc
+CC_M4      := arm-none-eabi-gcc
+
+CFLAGS_COMMON := \
+    -std=c11              \
+    -Wall -Wextra         \
+    -Wshadow              \
+    -Wformat=2            \
+    -fno-common           \
+    -ffunction-sections   \
+    -fdata-sections
+
+# ── Security hardening ──────────────────────────────────────────────
+CFLAGS_HARDEN := \
+    -fstack-protector-strong  \
+    -D_FORTIFY_SOURCE=2       \
+    -Wstack-usage=512
+
+# ── ARMv8-A 64-bit with crypto extensions ───────────────────────────
+CFLAGS_A64 := $(CFLAGS_COMMON) $(CFLAGS_HARDEN) \
+    -O2                           \
+    -march=armv8-a+crypto         \
+    -mfpu=crypto-neon-fp-armv8    \
+    -DAES_HW_AARCH64=1
+
+# ── ARMv7-M Cortex-M4 (software fallback) ───────────────────────────
+CFLAGS_M4  := $(CFLAGS_COMMON)    \
+    -O2                           \
+    -march=armv7-m                \
+    -mthumb                       \
+    -mfloat-abi=softfp            \
+    -ffreestanding                \
+    -fno-exceptions               \
+    -DAES_SW_FALLBACK=1
+
+# ── Native build for unit testing ────────────────────────────────────
+CFLAGS_NATIVE := $(CFLAGS_COMMON) $(CFLAGS_HARDEN) \
+    -O2 -DAES_SW_FALLBACK=1 -g
+
+SRCS := aes256_arm.c main_demo.c
+HDRS := aes256_arm.h
+
+.PHONY: all native aarch64 cortexm4 clean size
+
+all: native
+
+native: $(SRCS) $(HDRS)
+	$(CC_NATIVE) $(CFLAGS_NATIVE) -o aes256_native $(SRCS)
+	@echo "[native] Build OK — run: ./aes256_native"
+
+aarch64: $(SRCS) $(HDRS)
+	$(CC_A64) $(CFLAGS_A64) -o aes256_a64 $(SRCS)
+	@echo "[aarch64] Build OK"
+
+cortexm4: aes256_arm.c $(HDRS)
+	$(CC_M4) $(CFLAGS_M4) \
+	    -T cortexm4.ld     \
+	    -o aes256_m4.elf   \
+	    aes256_arm.c
+	@echo "[cortex-m4] Build OK"
+
+size: aes256_m4.elf
+	arm-none-eabi-size --format=berkeley aes256_m4.elf
+
+clean:
+	rm -f aes256_native aes256_a64 aes256_m4.elf *.o

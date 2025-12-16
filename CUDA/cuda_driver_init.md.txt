@@ -1,0 +1,8 @@
+#include <cuda.h>: Includes the Driver API headers. Note it's different from cuda_runtime.h; when you compile this, you must link with -lcuda. NVIDIA CUDA Library guide
+CUresult res;: The return type for almost all Driver API functions. It’s an integer; 0 (CUDA_SUCCESS) means everything is fine.
+res = cuInit(0);: The most important line. Unlike the Runtime API, the Driver API must be manually initialized. If you skip this, every other CUDA function will fail. cuInit API Reference
+cuDeviceGetCount(&deviceCount);: Just like the previous code, this counts how many GPUs (like your Jetson's Maxwell GPU) are visible to the driver.
+CUdevice device;: Defines a "handle" (a pointer/ID) for a specific physical GPU.
+res = cuDeviceGet(&device, 0);: Connects your device handle to the first GPU in the system (index 0). cuDeviceGet Reference
+char name[256];: Creates a text buffer to store the GPU's name.
+cuDeviceGetName(name, 256, device);: Fills that buffer with the hardware name (e.g., "NVIDIA Tegra X1"). 

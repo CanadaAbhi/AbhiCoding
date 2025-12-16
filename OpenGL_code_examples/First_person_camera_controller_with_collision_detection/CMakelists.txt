@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.10)
+project(FirstPersonCamera)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find OpenGL
+find_package(OpenGL REQUIRED)
+
+# GLFW
+find_package(glfw3 REQUIRED)
+
+# GLM
+find_package(glm REQUIRED)
+
+# Add executable
+add_executable(camera_demo
+    main.cpp
+)
+
+# Include directories
+target_include_directories(camera_demo PRIVATE
+    ${OPENGL_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Link libraries
+target_link_libraries(camera_demo
+    OpenGL::GL
+    glfw
+    ${CMAKE_DL_LIBS}
+)
+
+# Copy GLAD files if needed
+# Note: You'll need to download GLAD from https://glad.dav1d.de/
+# and place glad.c and glad.h in your project directory

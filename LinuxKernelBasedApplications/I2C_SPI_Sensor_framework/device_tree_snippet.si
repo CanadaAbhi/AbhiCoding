@@ -1,0 +1,30 @@
+/* i2c1: temperature sensor, GPIO2 line 14 as active-high threshold IRQ */
+&i2c1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	temp_sensor: temp@48 {
+		compatible = "acme,fake-temp";
+		reg = <0x48>;
+		vdd-supply = <&pmic_ldo3>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <14 IRQ_TYPE_EDGE_RISING>;
+	};
+};
+
+/* spi0: IMU, chip-select 0, GPIO3 line 7 as data-ready IRQ */
+&spi0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	imu_sensor: imu@0 {
+		compatible = "acme,fake-imu-spi";
+		reg = <0>;                 /* chip select 0 */
+		spi-max-frequency = <8000000>;
+		vdd-supply = <&pmic_ldo4>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <7 IRQ_TYPE_EDGE_RISING>;
+	};
+};
