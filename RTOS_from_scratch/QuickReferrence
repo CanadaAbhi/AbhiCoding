@@ -1,0 +1,156 @@
+# RTOS Quick Reference Card
+
+## Core Initialization
+```c
+rtos_init();                    // Initialize RTOS
+rtos_start();                   // Start scheduler
+```
+
+## Task Management
+```c
+// Create task (priority: 0=highest, 511=lowest)
+task_tcb_t* task = rtos_task_create(func, "name", priority, arg);
+
+rtos_task_delay(ticks);         // Delay current task
+rtos_task_yield();              // Yield to another task
+rtos_task_suspend(task);        // Suspend task
+rtos_task_resume(task);         // Resume task
+rtos_task_delete(task);         // Delete task
+task_tcb_t* t = rtos_task_get_current(); // Get current task
+```
+
+## Semaphores
+```c
+semaphore_t* sem = rtos_semaphore_create(initial_count);
+rtos_semaphore_wait(sem, timeout);    // Wait (decrement)
+rtos_semaphore_signal(sem);           // Signal (increment)
+rtos_semaphore_delete(sem);           // Delete
+```
+
+## Mutexes (with Priority Inheritance)
+```c
+mutex_t* mtx = rtos_mutex_create();
+rtos_mutex_lock(mtx, timeout);        // Lock (blocks if owned)
+rtos_mutex_unlock(mtx);               // Unlock
+rtos_mutex_delete(mtx);               // Delete
+```
+
+## Message Queues
+```c
+message_queue_t* q = rtos_queue_create(size);
+rtos_queue_send(q, msg, timeout);     // Send message
+rtos_queue_receive(q, &msg, timeout); // Receive message
+rtos_queue_delete(q);                 // Delete queue
+```
+
+## Timers
+```c
+timer_t* tmr = rtos_timer_create(period_ms, callback, arg, periodic);
+rtos_timer_start(tmr);                // Start timer
+rtos_timer_stop(tmr);                 // Stop timer
+rtos_timer_delete(tmr);               // Delete timer
+```
+
+## Interrupts
+```c
+rtos_interrupt_register(irq_num, handler, priority);
+rtos_interrupt_enable(irq_num);       // Enable IRQ
+rtos_interrupt_disable(irq_num);      // Disable IRQ
+
+rtos_critical_enter();                // Disable interrupts
+// Critical code here
+rtos_critical_exit();                 // Enable interrupts
+```
+
+## Constants
+```c
+UINT32_MAX         // Infinite timeout
+0                  // No wait (non-blocking)
+RTOS_OK            // Success
+RTOS_ERROR         // General error
+RTOS_TIMEOUT       // Operation timed out
+RTOS_WOULD_BLOCK   // Would block (non-blocking call)
+```
+
+## Common Patterns
+
+### Producer-Consumer (Semaphore)
+```c
+semaphore_t *sem = rtos_semaphore_create(0);
+
+void producer(void *arg) {
+    while(1) {
+        produce_data();
+        rtos_semaphore_signal(sem);  // Signal consumer
+    }
+}
+
+void consumer(void *arg) {
+    while(1) {
+        rtos_semaphore_wait(sem, UINT32_MAX);  // Wait for data
+        consume_data();
+    }
+}
+```
+
+### Shared Resource Protection (Mutex)
+```c
+mutex_t *resource_mtx = rtos_mutex_create();
+
+void task_a(void *arg) {
+    rtos_mutex_lock(resource_mtx, UINT32_MAX);
+    // Access shared resource
+    rtos_mutex_unlock(resource_mtx);
+}
+```
+
+### Message Passing
+```c
+message_queue_t *q = rtos_queue_create(10);
+
+// Sender
+void sender(void *arg) {
+    int *msg = malloc(sizeof(int));
+    *msg = 42;
+    rtos_queue_send(q, msg, UINT32_MAX);
+}
+
+// Receiver
+void receiver(void *arg) {
+    void *msg;
+    rtos_queue_receive(q, &msg, UINT32_MAX);
+    int value = *(int*)msg;
+    free(msg);
+}
+```
+
+### Periodic Timer
+```c
+void timer_cb(void *arg) {
+    // Called every period
+}
+
+timer_t *tmr = rtos_timer_create(100, timer_cb, NULL, true);
+rtos_timer_start(tmr);
+```
+
+## Priority Guidelines
+- **0-99**: Critical real-time tasks (interrupts, control loops)
+- **100-299**: Normal priority tasks (data processing, communication)
+- **300-510**: Background tasks (logging, housekeeping)
+- **511**: Idle task (automatic, do not use)
+
+## Memory Usage
+- Each task: ~4KB (1KB stack + TCB)
+- Semaphore: 32 bytes
+- Mutex: 32 bytes
+- Queue: 32 bytes + buffer
+- Timer: 32 bytes
+
+## Best Practices
+1. Always check return values
+2. Use timeouts to prevent deadlocks
+3. Keep critical sections short
+4. Match every create with a delete
+5. Don't call blocking functions from ISRs
+6. Acquire mutexes in consistent order

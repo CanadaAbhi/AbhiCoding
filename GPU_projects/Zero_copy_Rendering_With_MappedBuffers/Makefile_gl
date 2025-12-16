@@ -1,0 +1,67 @@
+# Makefile for OpenGL Persistent Buffer Mapping Demo
+
+# Compiler and flags
+CC = gcc
+CFLAGS = -Wall -Wextra -O2 -std=c11
+LDFLAGS = -lglfw -lGLEW -lGL -lm
+
+# Target executable
+TARGET = persistent_buffer_demo
+
+# Source files
+SRCS = main.c \
+       vertex_shaders.c \
+       shader_compiler_helper.c \
+       draw_ring_segment.c
+
+# Object files
+OBJS = $(SRCS:.c=.o)
+
+# Header files
+HEADERS = global_header.h
+
+# Default target
+all: $(TARGET)
+
+# Link the executable
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
+	@echo "Build complete: $(TARGET)"
+	@echo "Run with: ./$(TARGET)"
+
+# Compile source files
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Run the program
+run: $(TARGET)
+	./$(TARGET)
+
+# Clean build artifacts
+clean:
+	rm -f $(OBJS) $(TARGET)
+	@echo "Clean complete"
+
+# Install dependencies (Ubuntu/Debian)
+deps:
+	@echo "Installing dependencies..."
+	sudo apt-get update
+	sudo apt-get install -y libglfw3-dev libglew-dev libgl1-mesa-dev
+
+# Check dependencies
+check:
+	@echo "Checking dependencies..."
+	@which gcc > /dev/null || echo "ERROR: gcc not found"
+	@pkg-config --exists glfw3 || echo "ERROR: GLFW3 not found"
+	@pkg-config --exists glew || echo "ERROR: GLEW not found"
+	@echo "Dependency check complete"
+
+# Debug build
+debug: CFLAGS += -g -O0 -DDEBUG
+debug: clean $(TARGET)
+	@echo "Debug build complete"
+
+# Rebuild
+rebuild: clean all
+
+.PHONY: all run clean deps check debug rebuild

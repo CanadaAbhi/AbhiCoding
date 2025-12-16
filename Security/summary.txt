@@ -1,0 +1,188 @@
+7. Security Summary
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║              SECURITY PROPERTIES SUMMARY                         ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║  CONFIDENTIALITY                                                 ║
+║  ├─ AES-256 (NIST FIPS 197, 256-bit key)                        ║
+║  └─ CTR mode (stream cipher, no padding needed)                  ║
+║                                                                  ║
+║  INTEGRITY / AUTHENTICITY                                        ║
+║  ├─ GHASH 128-bit authentication tag                             ║
+║  ├─ Covers: AAD + Ciphertext + IV                                ║
+║  └─ Constant-time tag comparison (no timing oracle)              ║
+║                                                                  ║
+║  IV MANAGEMENT                                                   ║
+║  ├─ 96-bit IV (GCM-optimal, no GHASH ambiguity)                  ║
+║  ├─ Hybrid: random prefix (4B) + monotonic counter (8B)          ║
+║  ├─ Hard limit: 2^32 encryptions per key context                 ║
+║  └─ Counter overflow → mandatory context re-initialization       ║
+║                                                                  ║
+║  KEY SECURITY                                                    ║
+║  ├─ HKDF-SHA256 derivation (RFC 5869)                            ║
+║  ├─ Domain-separated subkeys via 'info' string                   ║
+║  ├─ Keys stored in mlock()'d, guard-paged memory                 ║
+║  ├─ Explicit zeroization at every lifecycle stage                ║
+║  └─ ARMv8 Crypto Extensions (hardware AES, timing-safe)          ║
+║                                                                  ║
+║  MEMORY SAFETY                                                   ║
+║  ├─ Bounds-checked all buffer operations                         ║
+║  ├─ Guard pages detect buffer overflows into key material        ║
+║  ├─ mlock() prevents swap-to-disk (cold-boot mitigation)         ║
+║  └─ secure_memzero() on all sensitive data before free()         ║
+║                                                                  ║
+║  BUILD HARDENING                                                 ║
+║  ├─ -fstack-protector-strong (stack canaries)                    ║
+║  ├─ -D_FORTIFY_SOURCE=2 (libc buffer checks)                     ║
+║  ├─ PIE + ASLR (-fPIE, -pie)                                     ║
+║  ├─ RELRO + BIND_NOW (GOT/PLT hardening)                         ║
+║  └─ NX stack (-z noexecstack)                                    ║
+║                                                                  ║
+║  MITIGATED ATTACKS                                               ║
+║  ├─ Padding Oracle    → GCM has no padding                       ║
+║  ├─ IV Reuse          → Hybrid counter enforces uniqueness        ║
+║  ├─ Timing Oracle     → Constant-time tag compare + HW AES       ║
+║  ├─ Cold Boot         → mlock() + immediate zeroization          ║
+║  ├─ Heap Spray        → mmap-based secure_alloc with guards      ║
+║  └─ Chosen Ciphertext → Tag verified before plaintext output     ║
+╚══════════════════════════════════════════════════════════════════╝
+Compilation Instructions
+bash
+
+
+# 1. Install cross-toolchain (Ubuntu/Debian)
+sudo apt install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+
+# 2. Build mbedTLS for ARM
+git clone --depth=1 -b v3.5.1 \
+    https://github.com/Mbed-TLS/mbedtls.git /opt/mbedtls
+
+cd /opt/mbedtls
+make lib CC=aarch64-linux-gnu-gcc \
+    CFLAGS="-march=armv8-a+crypto -O2"
+
+# 3. Build project (release)
+make ARCH=aarch64 MBEDTLS_DIR=/opt/mbedtls
+
+# 4. Build with sanitizers (x86 dev/test)
+make debug CC=gcc CROSS="" MARCH="-march=native"
+
+# 5. Run on ARM target (QEMU)
+qemu-aarch64 -L /usr/aarch64-linux-gnu ./build/bin/aes_gcm_demo
+
+# 6. Static analysis
+make analyze
+
+# 7. Check binary security properties
+checksec --file=./build/bin/aes_gcm_demo
+Remove warermark from all the generated code for above implementation
+Looking at all the code generated above, there are no watermarks in any of the files.
+
+What the code does contain are:
+
+What's Actually in the Code
+
+
+┌─────────────────────────────────────────────────────────────┐
+│              Code Comment Classification                     │
+├──────────────────────────┬──────────────────────────────────┤
+│  Comment Type            │  Purpose                         │
+├──────────────────────────┼──────────────────────────────────┤
+│  Security explanations   │  Why decisions were made         │
+│  SECURITY: labels        │  Flag critical security logic    │
+│  SAFETY REMINDER notes   │  Caller usage guidance           │
+│  Section dividers        │  Code readability                │
+│  API documentation       │  Function contracts              │
+│  Timestamps (__DATE__)   │  DRBG personalization (crypto)   │
+└──────────────────────────┴──────────────────────────────────┘
+Specifically — the __DATE__ __TIME__ line people sometimes flag:
+c
+
+
+/* This is NOT a watermark — it is a cryptographic requirement */
+
+static const uint8_t g_drbg_pers[] =
+    "aes_gcm_arm_embedded_v1.0_" __DATE__ "__" __TIME__;
+
+/*
+ * SECURITY PURPOSE: NIST SP 800-90A requires a personalization
+ * string for CTR-DRBG instantiation. This string provides domain
+ * separation between DRBG instances. The build timestamp makes
+ * it unique across builds. Replace with a device-unique identifier
+ * (serial number, hardware UID) in production:
+ *
+ *   uint8_t device_uid[16];
+ *   read_hardware_uid(device_uid);          // SoC fuse / OTP
+ *   mbedtls_ctr_drbg_seed(..., device_uid, 16);
+ */
+If You Want to Remove the Build Timestamp
+c
+
+
+/* key_manager.c / aes_gcm.c — replace the personalization string */
+
+/* BEFORE (build timestamp — fine for most uses) */
+static const uint8_t g_drbg_pers[] =
+    "aes_gcm_arm_embedded_v1.0_" __DATE__ "__" __TIME__;
+
+
+/* OPTION A — Device hardware UID (recommended for production) */
+static uint8_t g_drbg_pers[16];   /* populated at runtime       */
+
+static aes_gcm_error_t rng_init_once(void)
+{
+    /* Read device-unique identifier from SoC OTP/fuse registers  */
+    /* ARM example: CoreSight ROM table, or vendor-specific eFuse  */
+    if (read_hardware_uid(g_drbg_pers, sizeof(g_drbg_pers)) != 0) {
+        return AES_GCM_ERR_RNG;
+    }
+    /* ... rest of init unchanged ... */
+}
+
+
+/* OPTION B — Fixed application string (simplest) */
+static const uint8_t g_drbg_pers[] = "aes_gcm_arm_embedded_v1";
+
+
+/* OPTION C — Runtime random (for systems with no UID) */
+static uint8_t g_drbg_pers[32];   /* populated at runtime       */
+
+static aes_gcm_error_t rng_init_once(void)
+{
+    /* Seed personalization string from /dev/urandom directly     */
+    int fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
+    if (fd < 0)                    { return AES_GCM_ERR_RNG; }
+    if (read(fd, g_drbg_pers, sizeof(g_drbg_pers))
+        != (ssize_t)sizeof(g_drbg_pers)) {
+        close(fd);
+        return AES_GCM_ERR_RNG;
+    }
+    close(fd);
+    /* ... rest of init unchanged ... */
+}
+Bottom Line
+
+
+
+Item	Is it a watermark?	Can it be removed?
+SECURITY: comment labels	No — documentation	Yes, safely
+__DATE__ __TIME__	No — DRBG requirement	Yes, replace with device UID
+Section divider lines /* --- */	No — readability	Yes, safely
+aes_gcm_strerror() strings	No — error handling	No, needed for debugging
+Version string v1.0	No — identification	Yes, change to your version
+All comments are functional security documentation or standard code style — none are watermarks, tracking identifiers, or attribution markers.
+
+Act as an embedded systems expert.
+
+Write lightweight AES-256 encryption code optimized for low-memory ARM devices.
+
+Constraints:
+- Minimal RAM usage
+- No dynamic memory allocation
+- Stack-safe
+- Use hardware acceleration if available (ARMv8 crypto extensions)
+- Include benchmark hooks (cycle count)
+No water marks should be present on the generated code
+c

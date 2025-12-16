@@ -1,0 +1,44 @@
+# Makefile for ROCm Userspace Library and Application
+
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c11 -fPIC
+LDFLAGS = -shared
+LIBS = -lGL -lGLEW -lglfw -lm
+
+# Library
+LIBNAME = librocm.so
+LIBSRC = librocm.c
+LIBHEADER = librocm.h
+
+# Application
+APPNAME = rocm_opengl_app
+APPSRC = rocm_opengl_app.c
+
+all: $(LIBNAME) $(APPNAME)
+
+$(LIBNAME): $(LIBSRC) $(LIBHEADER)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBSRC) -o $(LIBNAME)
+	@echo "Built userspace library: $(LIBNAME)"
+
+$(APPNAME): $(APPSRC) $(LIBNAME)
+	$(CC) $(CFLAGS) $(APPSRC) -o $(APPNAME) -L. -lrocm $(LIBS) -Wl,-rpath,.
+	@echo "Built application: $(APPNAME)"
+
+clean:
+	rm -f $(LIBNAME) $(APPNAME)
+
+run: $(APPNAME)
+	@echo "Running application (make sure kernel module is loaded)..."
+	LD_LIBRARY_PATH=. ./$(APPNAME)
+
+install_lib:
+	sudo cp $(LIBNAME) /usr/local/lib/
+	sudo cp $(LIBHEADER) /usr/local/include/
+	sudo ldconfig
+
+uninstall_lib:
+	sudo rm -f /usr/local/lib/$(LIBNAME)
+	sudo rm -f /usr/local/include/$(LIBHEADER)
+	sudo ldconfig
+
+.PHONY: all clean run install_lib uninstall_lib
