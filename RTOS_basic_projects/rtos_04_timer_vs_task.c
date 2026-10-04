@@ -183,7 +183,6 @@ int main() {
     
     printf("╔════════════════════════════════════════════════════════╗\n");
     printf("║  RTOS Project 4: Software Timers vs Tasks Comparison  ║\n");
-    printf("╚════════════════════════════════════════════════════════╝\n\n");
     
     printf("Concepts demonstrated:\n");
     printf("  - Software timers with callbacks\n");

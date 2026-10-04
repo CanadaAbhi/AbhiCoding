@@ -1,0 +1,17 @@
+=== job 4821 (ctx=2 engine=1) ===
+ioctl dispatch (enter->submit)        1180 ns
+validate+reserve (submit->push)        640 ns
+queueing (push->GPU start)            9420 ns
+GPU execution                       2004000 ns
+IRQ assertion latency                   78 us
+softirq dispatch latency                 12 us
+IH processing + fence signal             340 ns
+wake latency (signal->wakeup)          4100 ns
+runqueue wait (wakeup->sched-in)       2600 ns
+return-to-user path                    890 ns
+TOTAL end-to-end                   2101258 ns
+
+CPU ──────██████───────────────────────────────────────█████──────
+IRQ ──────────────────────────────────────────█────────────────────
+GPU ─────────────────████████████████████████████████──────────────
+DMA ─────────────────────────────────────────────────────────────────
